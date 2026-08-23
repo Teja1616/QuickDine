@@ -9,7 +9,8 @@ import { ShieldCheckIcon, CheckCircleIcon, BarChart3Icon } from "lucide-react";
 // Subcomponents
 import AdminApprovals from "../../components/admin/AdminApprovals.tsx";
 import AdminStats from "../../components/admin/AdminStats.tsx";
-import { dummyAdminStats, dummyRestaurant } from "../../assets/assets.ts";
+import api from "../../lib/api.ts";
+import toast from "react-hot-toast";
 
 export default function AdminDashboard() {
     const { logout } = useAppContext();
@@ -20,14 +21,37 @@ export default function AdminDashboard() {
     const [btnLoading, setBtnLoading] = useState<string | null>(null);
 
     const fetchAdminData = async () => {
-        setRestaurants(dummyRestaurant);
-        setStats(dummyAdminStats);
-        setLoading(false);
+        try {
+            setLoading(true);
+            const rRes = await api.get("/admin/restaurants")
+            setRestaurants(rRes.data)
+
+            const sRes = await api.get("/admin/stats")
+            setStats(sRes.data)
+        } catch (error: any) {
+           toast.error(error?.response?.data?.message || "Failed to retrive administrator data"); 
+        }finally{
+            setLoading(false)
+        }
     };
 
     const handleApproveStatus = async (restaurantId: string, status: "approved" | "rejected") => {
-        console.log(restaurantId, status);
-        setBtnLoading(null);
+        try {
+            setBtnLoading(restaurantId);
+            await api.put(`/admin/restaurants/${restaurantId}/approve`, {status})
+            toast.success(`Restaurant has been marked as ${status.toUpperCase()}`)
+
+            // Reload local list and stats
+            const rRes = await api.get("/admin/restaurants")
+            setRestaurants(rRes.data) 
+
+            const sRes = await api.get("/admin/stats")
+            setStats(sRes.data)
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Failed to update restaurant approval status");
+        }finally{
+            setBtnLoading(null);
+        }
     };
 
     useEffect(() => {

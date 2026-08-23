@@ -1,0 +1,13 @@
+import { Router } from "express";
+import { ownerOnly, protect } from "../middlewares/auth.js";
+import { getOwnerRestaurant, createOwnerRestaurant, updateOwnerRestaurant, getOwnerBookings, updateBookingStatus } from "../controllers/ownerController.js";
+import upload from "../config/multer.js";
+const ownerRouter = Router();
+ownerRouter.use(protect);
+ownerRouter.use(ownerOnly);
+ownerRouter.get("/restaurant", getOwnerRestaurant);
+ownerRouter.post("/restaurant", upload.single("image"), createOwnerRestaurant);
+ownerRouter.put("/restaurant", upload.single("image"), updateOwnerRestaurant);
+ownerRouter.get("/bookings", getOwnerBookings);
+ownerRouter.put("/bookings/:id/status", updateBookingStatus);
+export default ownerRouter;

@@ -11,7 +11,7 @@ import RestaurantHero from "../components/restaurant/RestaurantHero.tsx";
 import RestaurantInfo from "../components/restaurant/RestaurantInfo.tsx";
 import RestaurantReviews from "../components/restaurant/RestaurantReviews.tsx";
 import BookingWidget from "../components/restaurant/BookingWidget.tsx";
-import { dummyAvailability, dummyRestaurant } from "../assets/assets.ts";
+import api from "../lib/api.ts";
 
 export default function RestaurantDetail() {
     const { slug } = useParams<{ slug: string }>();
@@ -30,8 +30,20 @@ export default function RestaurantDetail() {
 
     useEffect(() => {
         const fetchRestaurant = async () => {
-            setRestaurant(dummyRestaurant.find((r) => r.slug === slug));
-            setLoading(false);
+            try {
+                setLoading(true);
+                const res = await api.get(`/restaurants/${slug}`)
+                setRestaurant(res.data)
+
+                // Initialize booking values
+                const today = new Date().toISOString().split("T")[0];
+                setSelectedDate(today);
+            } catch (error:any) {
+                toast.error(error?.response?.data?.message || error?.message);
+                navigate("/");
+            }finally{
+                setLoading(false)
+            }
         };
 
         if (slug) {
@@ -41,8 +53,16 @@ export default function RestaurantDetail() {
 
     useEffect(() => {
         const fetchAvailability = async () => {
-            setSlotsAvailability(dummyAvailability);
-            setLoadingSlots(false);
+            if(!restaurant?._id || !selectedDate) return;
+            try {
+                setLoadingSlots(true);
+                const res = await api.get(`/restaurants/${restaurant._id}/availability?date=${selectedDate}`)
+                setSlotsAvailability(res.data)
+            } catch (error:any) {
+                console.error(error);
+            }finally{
+                setLoadingSlots(false)
+            }
         };
         fetchAvailability();
     }, [restaurant?._id, selectedDate]);
